@@ -3,6 +3,7 @@ import { body, cookie } from 'express-validator';
 import bcrypt from 'bcrypt';
 
 import login from '@/controllers/v1/auth/login';
+import teacherLogin from '@/controllers/v1/auth/teacherLogin';
 import refreshToken from '@/controllers/v1/auth/refresh_token';
 import logout, { logoutUser } from '@/controllers/v1/auth/logout';
 
@@ -43,6 +44,37 @@ router.post(
     }),
   validationError,
   login,
+);
+
+router.post(
+  '/teacher-login',
+  body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required'),
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long')
+    .custom(async (value, { req }) => {
+      const { email } = req.body as { email: string };
+      const user = await User.findOne({ email })
+        .select('password')
+        .lean()
+        .exec();
+
+      if (!user) {
+        throw new Error('User email or password is invalid');
+      }
+
+      const passwordMatch = await bcrypt.compare(value, user.password);
+      if (!passwordMatch) {
+        throw new Error('User email or password is invalid');
+      }
+    }),
+  validationError,
+  teacherLogin,
 );
 
 router.post(

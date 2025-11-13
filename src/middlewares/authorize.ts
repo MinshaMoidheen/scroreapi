@@ -4,7 +4,7 @@ import User from '@/models/user';
 
 import type { Request, Response, NextFunction } from 'express';
 
-export type AuthRole = 'admin' | 'user' | 'superadmin';
+export type AuthRole = 'admin' | 'user' | 'superadmin' | 'teacher';
 
 const authorize = (roles: AuthRole[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -55,6 +55,18 @@ const authorize = (roles: AuthRole[]) => {
           res.status(403).json({
             code: 'AuthorizationError',
             message: 'User role can only have "all", "centre", or "own" access',
+          });
+          return;
+        }
+      } else if (user.role === 'teacher') {
+        if (
+          user.access !== 'all' &&
+          user.access !== 'centre' &&
+          user.access !== 'own'
+        ) {
+          res.status(403).json({
+            code: 'AuthorizationError',
+            message: 'Teacher role can only have "all", "centre", or "own" access',
           });
           return;
         }

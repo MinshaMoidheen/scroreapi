@@ -1,5 +1,4 @@
 import Meeting from '../../../models/meeting';
-import User from '../../../models/user';
 import { Request, Response } from 'express';
 
 export const createMeeting = async (req: Request, res: Response) => {
@@ -139,14 +138,11 @@ export const getMyMeetings = async (req: Request, res: Response) => {
     const currentUserId = req.userId;
     const { courseClass, section, subject } = req.query;
 
+    console.log('Get My Meetings - Current User ID:', currentUserId);
+    console.log('Query Params:', req.query);
+
     if (!currentUserId) {
       return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    // Get current user to filter by email (in case there are multiple users with same email)
-    const currentUser = await User.findById(currentUserId).select('email');
-    if (!currentUser) {
-      return res.status(404).json({ error: 'User not found' });
     }
 
     // Import Types for ObjectId conversion
@@ -157,14 +153,12 @@ export const getMyMeetings = async (req: Request, res: Response) => {
       'isDeleted.status': { $ne: true },
     };
 
-    // Filter by organizer - include current user and all users with the same email
-    const organizerUsers = await User.find({ email: currentUser.email }).select('_id');
-    const organizerIds = organizerUsers.map(u => u._id);
-    // Also include the current user's ID directly to ensure it's included
-    if (!organizerIds.some(id => id.toString() === currentUserId.toString())) {
-      organizerIds.push(currentUserId);
-    }
-    filter.organizer = { $in: organizerIds };
+    // Filter by participants - show meetings where the logged-in user is a participant
+    // Also include meetings where the user is the organizer
+    filter.$or = [
+      { participants: { $in: [currentUserId] } }, // User is a participant (participants is an array)
+      { organizer: currentUserId }                 // User is the organizer
+    ];
 
     // Optionally filter by courseClass, section, subject if provided (convert to ObjectId)
     if (courseClass) {
@@ -178,7 +172,7 @@ export const getMyMeetings = async (req: Request, res: Response) => {
     }
 
     console.log('My Meetings Filter:', JSON.stringify(filter, null, 2));
-    console.log('Organizer IDs:', organizerIds.map(id => id.toString()));
+    console.log('Current User ID:', currentUserId.toString());
 
     const meetings = await Meeting.find(filter)
       .populate('organizer', 'username email')

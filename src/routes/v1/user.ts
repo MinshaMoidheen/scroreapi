@@ -45,8 +45,8 @@ router.post(
     .withMessage('Username must be less than 20 characters long'),
   body('role')
     .optional()
-    .isIn(['admin', 'user'])
-    .withMessage('Role must be either admin or user'),
+    .isIn(['admin', 'user', 'teacher'])
+    .withMessage('Role must be either admin, user, or teacher'),
   body('access')
     .optional()
     .isIn(['centre', 'own', 'all'])
@@ -67,7 +67,7 @@ router.post(
 router.get(
   '/current',
   authenticate,
-  authorize(['admin', 'user', 'superadmin']),
+  authorize(['admin', 'user', 'superadmin', 'teacher']),
   getCurrentUser,
 );
 

@@ -49,8 +49,8 @@ const createUser = async (req: Request, res: Response): Promise<void> => {
     let newUser: any;
 
     if (currentUser.role === 'superadmin') {
-      // Superadmin can create admin and user roles
-      if (role !== 'admin' && role !== 'user') {
+      // Superadmin can create admin, user, and teacher roles
+      if (role && role !== 'admin' && role !== 'user' && role !== 'teacher') {
         // Log the error
         if (currentUserId) {
           await logger.logError(
@@ -64,7 +64,7 @@ const createUser = async (req: Request, res: Response): Promise<void> => {
         }
         res.status(403).json({
           code: 'AuthorizationError',
-          message: 'Superadmin can only create admin or user roles',
+          message: 'Superadmin can only create admin, user, or teacher roles',
         });
         return;
       }
@@ -89,14 +89,14 @@ const createUser = async (req: Request, res: Response): Promise<void> => {
         access: finalAccess,
       });
     } else if (currentUser.role === 'admin') {
-      // Admin can only create users with 'user' role
-      if (role && role !== 'user') {
+      // Admin can create users with 'user' or 'teacher' role
+      if (role && role !== 'user' && role !== 'teacher') {
         // Log the error
         if (currentUserId) {
           await logger.logError(
             'USER',
             'CREATE',
-            `Admin attempted to create non-user account: ${role}`,
+            `Admin attempted to create invalid account: ${role}`,
             currentUserId,
             req,
             { role }
@@ -104,7 +104,7 @@ const createUser = async (req: Request, res: Response): Promise<void> => {
         }
         res.status(403).json({
           code: 'AuthorizationError',
-          message: 'Admin users can only create user accounts',
+          message: 'Admin users can only create user or teacher accounts',
         });
         return;
       }
@@ -143,14 +143,15 @@ const createUser = async (req: Request, res: Response): Promise<void> => {
         return;
       }
 
-      // Validate access level for user role
+      // Validate access level for user or teacher role
       const finalAccess = access || 'centre';
+      const finalRole = role || 'user';
 
       newUser = await User.create({
         username,
         email,
         password,
-        role: 'user',
+        role: finalRole,
         access: finalAccess,
       });
     } else {

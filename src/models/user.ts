@@ -5,7 +5,7 @@ export interface IUser {
   username: string;
   email: string;
   password: string;
-  role: 'admin' | 'user' | 'superadmin';
+  role: 'admin' | 'user' | 'superadmin' | 'teacher';
   access: 'centre' | 'own' | 'all';
   collaboratingCentreId?: Types.ObjectId;
   isDeleted?: {
@@ -38,7 +38,7 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: [true, 'Role is required'],
       enum: {
-        values: ['admin', 'user', 'superadmin'],
+        values: ['admin', 'user', 'superadmin', 'teacher'],
         message: '{VALUE} is not supported',
       },
       default: 'user',
@@ -70,6 +70,11 @@ const userSchema = new Schema<IUser>(
             return access === 'all' || access === 'centre' || access === 'own';
           }
 
+          // Teacher can have 'all', 'centre', or 'own' access
+          if (role === 'teacher') {
+            return access === 'all' || access === 'centre' || access === 'own';
+          }
+
           return false;
         },
         message: function (this: IUser) {
@@ -82,6 +87,9 @@ const userSchema = new Schema<IUser>(
           }
           if (role === 'user') {
             return 'User role can have "all", "centre", or "own" access';
+          }
+          if (role === 'teacher') {
+            return 'Teacher role can have "all", "centre", or "own" access';
           }
           return 'Invalid access level for role';
         },

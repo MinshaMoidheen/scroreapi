@@ -49,22 +49,22 @@ const getAllUser = async (req: Request, res: Response): Promise<void> => {
         return;
       }
 
-      // Superadmin can see all admin and user roles
+      // Superadmin can see all admin, user, and teacher roles
       queryFilter = {
         ...queryFilter,
-        role: { $in: ['admin', 'user'] },
+        role: { $in: ['admin', 'user', 'teacher'] },
       };
     } else if (currentUser.role === 'admin') {
       // Check admin's access level to determine allowed operations
       if (currentUser.access === 'all') {
-        // Admin with 'all' access can see all users from any collaborating centre
+        // Admin with 'all' access can see all users and teachers from any collaborating centre
         // but cannot see other admin users
         queryFilter = {
           ...queryFilter,
-          role: 'user',
+          role: { $in: ['user', 'teacher'] },
         };
       } else if (currentUser.access === 'centre') {
-        // Admin with 'centre' access can only see users from their own collaborating centre
+        // Admin with 'centre' access can only see users and teachers from their own collaborating centre
         if (!currentUser.collaboratingCentreId) {
           res.status(400).json({
             code: 'BadRequest',
@@ -73,11 +73,11 @@ const getAllUser = async (req: Request, res: Response): Promise<void> => {
           return;
         }
 
-        // Filter to only users with 'user' role from same collaborating centre
+        // Filter to only users with 'user' or 'teacher' role from same collaborating centre
         // Admin with 'centre' access cannot see other admin users
         queryFilter = {
           ...queryFilter,
-          role: 'user',
+          role: { $in: ['user', 'teacher'] },
           collaboratingCentreId: currentUser.collaboratingCentreId,
         };
       } else {

@@ -7,7 +7,7 @@ import { Types } from 'mongoose';
 export const generateAccessToken = (userId: Types.ObjectId): string => {
   return jwt.sign({ userId }, config.JWT_ACCESS_SECRET, {
     expiresIn: config.ACCESS_TOKEN_EXPIRY,
-    subject: 'accessApi',
+    subject: 'access', // Changed from 'accessApi' to 'access' to match streaming server expectations
   });
 };
 
