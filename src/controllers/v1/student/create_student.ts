@@ -67,6 +67,7 @@ const createStudent = async (req: Request, res: Response): Promise<void> => {
       courseClass,
       section,
       rollNumber,
+      role: 'student', // Set role to 'student' by default
     });
 
     // Populate references

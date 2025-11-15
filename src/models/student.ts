@@ -7,6 +7,7 @@ export interface IStudent {
   courseClass: Types.ObjectId;
   section: Types.ObjectId;
   rollNumber: string;
+  role?: string;
   isDeleted?: {
     deletedBy?: Types.ObjectId;
     deletedTime?: Date;
@@ -40,6 +41,11 @@ const studentSchema = new Schema<IStudent>(
       type: String,
       required: [true, 'Roll number is required'],
       maxLength: [20, 'Roll number must be less than 20 characters'],
+    },
+    role: {
+      type: String,
+      default: 'student',
+      enum: ['student'],
     },
     isDeleted: {
       type: {
