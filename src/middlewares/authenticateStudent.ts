@@ -57,7 +57,9 @@ const authenticateStudent = async (
       return;
     }
 
+    // Set both studentId and userId for consistency with other middleware
     req.studentId = jwtPayload.userId;
+    req.userId = jwtPayload.userId;
     return next();
   } catch (err) {
     if (err instanceof TokenExpiredError) {

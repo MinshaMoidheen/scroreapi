@@ -67,7 +67,7 @@ router.post(
 router.get(
   '/current',
   authenticate,
-  authorize(['admin', 'user', 'superadmin', 'teacher']),
+  authorize(['admin', 'user', 'superadmin', 'teacher', 'student']),
   getCurrentUser,
 );
 

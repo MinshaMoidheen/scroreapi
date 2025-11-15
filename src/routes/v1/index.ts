@@ -37,5 +37,6 @@ router.use('/teacher-sessions', teacherSessionRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/meetings', meetingRoutes);
 router.use('/students', studentRoutes);
+// Student-specific routes are nested under /students (e.g., /students/folders, /students/meetings)
 
 export default router;

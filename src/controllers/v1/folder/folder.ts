@@ -49,58 +49,72 @@ export const getFolders = async (req: Request, res: Response) => {
     const { courseClass, section, subject } = req.query;
     const userId = req.userId;
 
-
-    
     console.log('getFolders - userId:', userId);
-    console.log("req.query",req.query)
+    console.log("req.query", req.query);
     
     // Import Types for ObjectId conversion
     const { Types } = require('mongoose');
     
-    // Build filter from query parameters with ObjectId conversion
-    const filter: any = {};
+    // Check if user is a student
+    const User = (await import('@/models/user')).default;
+    const Student = (await import('@/models/student')).default;
+    
+    const user = await User.findById(userId).select('role').lean().exec();
+    const isStudent = !user; // If not found in User collection, might be a student
+    
+    // If student, get their class and section from Student collection
+    if (isStudent) {
+      const student = await Student.findById(userId)
+        .select('courseClass section')
+        .lean()
+        .exec();
+      
+      if (student) {
+        // Build filter based on student's class and section (no subject for students)
+        const filter: any = {
+          'isDeleted.status': { $ne: true },
+        };
+        
+        if (student.courseClass) {
+          filter.courseClass = new Types.ObjectId(student.courseClass.toString());
+        }
+        if (student.section) {
+          filter.section = new Types.ObjectId(student.section.toString());
+        }
+        
+        const folders = await Folder.find(filter)
+          .populate('parent')
+          .populate('allowedUsers')
+          .populate('files')
+          .populate('courseClass', 'name')
+          .populate('section', 'name')
+          .populate('subject', 'name')
+          .sort({ createdAt: -1 });
+        
+        return res.status(200).json(folders);
+      }
+    }
+    
+    // For teachers/users: Build filter from query parameters with ObjectId conversion
+    const filter: any = {
+      'isDeleted.status': { $ne: true },
+    };
     if (courseClass) filter.courseClass = new Types.ObjectId(courseClass as string);
     if (subject) filter.subject = new Types.ObjectId(subject as string);
     if (section) filter.section = new Types.ObjectId(section as string);
     
     console.log('Final filter:', filter);
     
-    // If no filter criteria, show all folders for debugging
-    if (Object.keys(filter).length === 0) {
-      console.log('No filter criteria - showing all folders');
-    } else {
-      console.log('Filter criteria applied - filtering folders');
-    }
-    
-    // First, let's check if any folders exist without filtering
-    const allFolders = await Folder.find({});
-    console.log('All folders in DB:', allFolders.length);
-    allFolders.forEach(f => {
-      console.log('Folder:', {
-        id: f._id,
-        name: f.folderName,
-        courseClass: f.courseClass,
-        section: f.section,
-        subject: f.subject
-      });
-    });
-    
     const folders = await Folder.find(filter)
       .populate('parent')
       .populate('allowedUsers')
       .populate('files')
-      .populate('courseClass')
-      .populate('section')
-      .populate('subject');
+      .populate('courseClass', 'name')
+      .populate('section', 'name')
+      .populate('subject', 'name')
+      .sort({ createdAt: -1 });
     
     console.log('Found folders:', folders.length);
-    console.log('Folder details:', folders.map(f => ({
-      id: f._id,
-      name: f.folderName,
-      courseClass: f.courseClass,
-      section: f.section,
-      subject: f.subject
-    })));
     
     res.status(200).json(folders);
   } catch (err) {
@@ -219,16 +233,49 @@ export const updateFolder = async (req: Request, res: Response) => {
 export const getSubfolders = async (req: Request, res: Response) => {
   try {
     const { parentId } = req.params;
+    const userId = req.userId;
     
     console.log('Backend getSubfolders received parentId:', parentId);
     
+    // Check if user is a student
+    const User = (await import('@/models/user')).default;
+    const Student = (await import('@/models/student')).default;
+    const { Types } = require('mongoose');
+    
+    const user = await User.findById(userId).select('role').lean().exec();
+    const isStudent = !user; // If not found in User collection, might be a student
+    
+    // Build filter
+    const filter: any = {
+      parent: parentId,
+      'isDeleted.status': { $ne: true },
+    };
+    
+    // If student, filter by their class and section
+    if (isStudent) {
+      const student = await Student.findById(userId)
+        .select('courseClass section')
+        .lean()
+        .exec();
+      
+      if (student) {
+        if (student.courseClass) {
+          filter.courseClass = new Types.ObjectId(student.courseClass.toString());
+        }
+        if (student.section) {
+          filter.section = new Types.ObjectId(student.section.toString());
+        }
+      }
+    }
+    
     // Find all folders where parent matches the parentId
-    const subfolders = await Folder.find({ parent: parentId })
+    const subfolders = await Folder.find(filter)
       .populate('allowedUsers')
       .populate('files')
-      .populate('courseClass')
-      .populate('section')
-      .populate('subject');
+      .populate('courseClass', 'name')
+      .populate('section', 'name')
+      .populate('subject', 'name')
+      .sort({ createdAt: -1 });
     
     console.log('Backend found subfolders:', subfolders.length);
     

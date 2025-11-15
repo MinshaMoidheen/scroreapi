@@ -12,7 +12,17 @@ import getStudentById from '@/controllers/v1/student/get_student_by_id';
 import updateStudent from '@/controllers/v1/student/update_student';
 import deleteStudent from '@/controllers/v1/student/delete_student';
 
+// Student-specific routes
+import studentFolderRoutes from './student/folders';
+import studentMeetingRoutes from './student/meetings';
+
 const router = Router();
+
+// Student-specific routes (for logged-in students)
+// These routes use authenticateStudent middleware (NO authorize middleware)
+// IMPORTANT: Mount these routes BEFORE parameterized routes to avoid route conflicts
+router.use('/folders', studentFolderRoutes);
+router.use('/meetings', studentMeetingRoutes);
 
 // Create student
 router.post(

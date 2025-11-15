@@ -1,17 +1,34 @@
 import { logger } from '@/lib/manualLogger';
 
 import User from '@/models/user';
+import Student from '@/models/student';
 
 import type { Request, Response, NextFunction } from 'express';
 
-export type AuthRole = 'admin' | 'user' | 'superadmin' | 'teacher';
+export type AuthRole = 'admin' | 'user' | 'superadmin' | 'teacher' | 'student';
 
 const authorize = (roles: AuthRole[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.userId;
 
     try {
-      const user = await User.findById(userId).select('role access').exec();
+      // First, try to find in User collection
+      let user = await User.findById(userId).select('role access').exec();
+
+      // If not found in User collection, check Student collection
+      let isStudent = false;
+      if (!user) {
+        const student = await Student.findById(userId).select('_id role').exec();
+        if (student) {
+          isStudent = true;
+          // Create a user-like object for students
+          user = {
+            _id: student._id,
+            role: 'student' as const,
+            access: 'own' as const, // Students have 'own' access by default
+          } as any;
+        }
+      }
 
       if (!user) {
         res.status(404).json({
@@ -21,7 +38,24 @@ const authorize = (roles: AuthRole[]) => {
         return;
       }
 
-      if (!roles.includes(user.role)) {
+      // Special handling for students: if they're accessing student-specific routes,
+      // they should be allowed even if 'student' is not in the roles array
+      // This prevents authorization errors when students access their own resources
+      if (isStudent && !roles.includes('student')) {
+        // Check if this is a student-specific route by checking the path
+        const path = req.path || req.url || '';
+        const isStudentRoute = path.includes('/students/folders') || 
+                               path.includes('/students/meetings') ||
+                               path.includes('/students/folders/') ||
+                               path.includes('/students/meetings/');
+        
+        if (isStudentRoute) {
+          // Allow students to access their own routes
+          return next();
+        }
+      }
+      
+      if (!roles.includes(user.role as AuthRole)) {
         res.status(403).json({
           code: 'AuthorizationError',
           message: 'Access denied, insufficient permissions',
@@ -70,6 +104,9 @@ const authorize = (roles: AuthRole[]) => {
           });
           return;
         }
+      } else if (user.role === 'student') {
+        // Students always have 'own' access - no validation needed
+        // This is handled in the user object creation above
       }
 
       return next();
