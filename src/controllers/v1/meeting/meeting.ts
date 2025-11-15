@@ -147,36 +147,65 @@ export const getMyMeetings = async (req: Request, res: Response) => {
 
     // Import Types for ObjectId conversion
     const { Types } = await import('mongoose');
+    const User = (await import('@/models/user')).default;
+    const Student = (await import('@/models/student')).default;
+
+    // Check if current user is a student or regular user
+    const user = await User.findById(currentUserId).select('role').lean().exec();
+    const isStudent = !user; // If not found in User collection, might be a student
 
     // Build query filter
     const filter: any = {
       'isDeleted.status': { $ne: true },
     };
 
-    // Filter by participants - show meetings where the logged-in user is a participant
-    // Also include meetings where the user is the organizer
-    filter.$or = [
-      { participants: { $in: [currentUserId] } }, // User is a participant (participants is an array)
-      { organizer: currentUserId }                 // User is the organizer
-    ];
+    if (isStudent) {
+      // For students: Show ALL meetings that match their class and section
+      // Don't filter by participants or organizer - just show all meetings for their class/section
+      if (courseClass) {
+        filter.courseClass = new Types.ObjectId(courseClass as string);
+      }
+      if (section) {
+        filter.section = new Types.ObjectId(section as string);
+      }
+      // Students don't filter by subject
+    } else {
+      // For teachers/users: Filter by participants/organizer AND class/section/subject
+      // Filter by participants - show meetings where the logged-in user is a participant
+      // Also include meetings where the user is the organizer
+      filter.$or = [
+        { participants: { $in: [currentUserId] } }, // User is a participant (participants is an array)
+        { organizer: currentUserId }                 // User is the organizer
+      ];
 
-    // Optionally filter by courseClass, section, subject if provided (convert to ObjectId)
-    if (courseClass) {
-      filter.courseClass = new Types.ObjectId(courseClass as string);
-    }
-    if (section) {
-      filter.section = new Types.ObjectId(section as string);
-    }
-    if (subject) {
-      filter.subject = new Types.ObjectId(subject as string);
+      // Optionally filter by courseClass, section, subject if provided (convert to ObjectId)
+      if (courseClass) {
+        filter.courseClass = new Types.ObjectId(courseClass as string);
+      }
+      if (section) {
+        filter.section = new Types.ObjectId(section as string);
+      }
+      if (subject) {
+        filter.subject = new Types.ObjectId(subject as string);
+      }
     }
 
     console.log('My Meetings Filter:', JSON.stringify(filter, null, 2));
     console.log('Current User ID:', currentUserId.toString());
+    console.log('Is Student:', isStudent);
 
     const meetings = await Meeting.find(filter)
-      .populate('organizer', 'username email')
-      .populate('participants', 'username email')
+      .populate({
+        path: 'organizer',
+        select: 'username email',
+        // Note: populate will work if organizer is User ID, but won't populate if it's Student ID
+        // This is fine as the query still works, just the populate might return null for student organizers
+      })
+      .populate({
+        path: 'participants',
+        select: 'username email',
+        // Same note as above
+      })
       .populate('courseClass', 'name')
       .populate('section', 'name')
       .populate('subject', 'name')

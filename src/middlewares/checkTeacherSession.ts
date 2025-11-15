@@ -1,12 +1,14 @@
 import { Response, NextFunction } from 'express';
 import TeacherSession from '@/models/teacherSession';
 import User from '@/models/user';
+import Student from '@/models/student';
 import type { Request } from 'express';
 
 /**
  * Middleware to check if a teacher user has an active session
  * This should be used on routes that teachers access
  * Note: Session expiration is handled by a cron job (see src/services/sessionExpirationCron.ts)
+ * For students, this middleware allows access without session check
  */
 const checkTeacherSession = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const userId = req.userId;
@@ -20,13 +22,25 @@ const checkTeacherSession = async (req: Request, res: Response, next: NextFuncti
   }
 
   try {
-    // Get the user to check if they're a teacher
-    const user = await User.findById(userId)
+    // First try to find in User collection
+    let user = await User.findById(userId)
       .select('role username')
       .lean()
       .exec();
 
+    // If not found in User collection, check Student collection
     if (!user) {
+      const student = await Student.findById(userId)
+        .select('username')
+        .lean()
+        .exec();
+
+      if (student) {
+        // Student found - allow access without session check
+        return next();
+      }
+
+      // Neither user nor student found
       res.status(404).json({
         code: 'NotFound',
         message: 'User not found',
