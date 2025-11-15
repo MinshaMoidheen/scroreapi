@@ -7,8 +7,8 @@ const config = {
   PORT: process.env.PORT || 5031,
   NODE_ENV: process.env.NODE_ENV,
   WHITELIST_ORIGINS: [
-    // 'http://localhost:3010',
-    'https://ydr2.aiims.edu'
+    'http://localhost:3010',
+    // 'https://ydr2.aiims.edu'
   ],
   MONGO_URI: process.env.MONGO_URL,
   LOCAL_MONGO_URI: process.env.LOCAL_MONGO_URL || 'mongodb://localhost:27017',
