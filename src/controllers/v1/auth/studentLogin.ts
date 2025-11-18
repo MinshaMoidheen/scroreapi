@@ -65,9 +65,9 @@ const studentLogin = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Generate access token and refresh token
-    const accessToken = generateAccessToken(student._id);
-    const refreshToken = generateRefreshToken(student._id);
+    // Generate access token and refresh token with student type
+    const accessToken = generateAccessToken(student._id, 'student');
+    const refreshToken = generateRefreshToken(student._id, 'student');
 
     // Store refresh token in database
     await Token.create({

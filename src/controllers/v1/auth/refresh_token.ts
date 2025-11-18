@@ -60,9 +60,11 @@ const refreshToken = async (req: Request, res: Response) => {
     // Verify Refresh Token
     const jwtPayload = verifyRefreshToken(refreshTokenValue) as {
       userId: Types.ObjectId;
+      type?: 'student' | 'user';
     };
 
-    const accessToken = generateAccessToken(jwtPayload.userId);
+    // Preserve the token type (student or user) when refreshing
+    const accessToken = generateAccessToken(jwtPayload.userId, jwtPayload.type);
 
     logger.info('Token refresh successful', {
       userId: jwtPayload.userId,
