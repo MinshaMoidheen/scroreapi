@@ -18,9 +18,9 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
   try {
     // Get total counts
     const [totalTeachers, totalCourseClasses, totalSubjects, totalParentFolders] = await Promise.all([
-      // Total teachers (users with role='user')
+      // Total teachers (users with role='teacher')
       User.countDocuments({
-        role: 'user',
+        role: 'teacher',
         'isDeleted.status': { $ne: true },
       }),
       // Total course classes
@@ -71,7 +71,7 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
                 $expr: {
                   $and: [
                     { $eq: ['$username', '$$usernameValue'] },
-                    { $eq: ['$role', 'user'] },
+                    { $eq: ['$role', 'teacher'] },
                   ],
                 },
                 'isDeleted.status': { $ne: true },
@@ -107,6 +107,14 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
     ]);
 
     // Get top 5 high performance teachers per month (current month)
+    // First, get all usernames that are teachers
+    const teacherUsernames = await User.find({
+      role: 'teacher',
+      'isDeleted.status': { $ne: true },
+    })
+      .select('username')
+      .lean()
+      .then((users) => users.map((u) => u.username));
 
     const topTeachers = await TeacherSession.aggregate([
       {
@@ -115,6 +123,7 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
             $gte: startOfMonth,
             $lte: endOfMonth,
           },
+          username: { $in: teacherUsernames }, // Only include sessions from teachers
           'isDeleted.status': { $ne: true },
         },
       },
@@ -127,12 +136,6 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
         },
       },
       {
-        $sort: { totalActiveTime: -1 },
-      },
-      {
-        $limit: 5,
-      },
-      {
         $lookup: {
           from: 'users',
           let: { usernameValue: '$_id' },
@@ -142,7 +145,7 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
                 $expr: {
                   $and: [
                     { $eq: ['$username', '$$usernameValue'] },
-                    { $eq: ['$role', 'user'] },
+                    { $eq: ['$role', 'teacher'] },
                   ],
                 },
                 'isDeleted.status': { $ne: true },
@@ -161,8 +164,14 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
       {
         $unwind: {
           path: '$userDetails',
-          preserveNullAndEmptyArrays: true,
+          preserveNullAndEmptyArrays: false, // Only include teachers that exist in users collection
         },
+      },
+      {
+        $sort: { totalActiveTime: -1 },
+      },
+      {
+        $limit: 5,
       },
       {
         $project: {

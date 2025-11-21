@@ -23,12 +23,14 @@ router.post(
     .trim()
     .notEmpty()
     .withMessage('Email is required')
+    .isEmail()
+    .withMessage('Invalid email address')
     .isLength({ max: 50 })
     .withMessage('Email must be less than 50 characters')
     .custom(async (value) => {
       const userExists = await User.exists({ email: value, 'isDeleted.status': { $ne: true } });
       if (userExists) {
-        throw new Error('User email or password is invalid');
+        throw new Error('This email is already in use');
       }
     }),
   body('password')
