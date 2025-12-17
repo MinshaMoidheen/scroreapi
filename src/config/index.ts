@@ -4,11 +4,15 @@ import type ms from 'ms';
 dotenv.config();
 
 const config = {
-  PORT: process.env.PORT || 5000,
+  PORT: process.env.PORT || 5050,
   NODE_ENV: process.env.NODE_ENV,
   WHITELIST_ORIGINS: [
+    'http://localhost:3000',
     'http://localhost:3010',
-    // 'https://ydr2.aiims.edu'
+    // 'https://ydr2.aiims.edu',
+    'http://localhost:3031',
+    'http://localhost:3050',
+    'https://sensei.luvid.in/',
   ],
   MONGO_URI: process.env.MONGO_URL,
   LOCAL_MONGO_URI: process.env.LOCAL_MONGO_URL || 'mongodb://localhost:27017',
