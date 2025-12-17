@@ -4,7 +4,7 @@ import type ms from 'ms';
 dotenv.config();
 
 const config = {
-  PORT: process.env.PORT || 5031,
+  PORT: process.env.PORT || 5000,
   NODE_ENV: process.env.NODE_ENV,
   WHITELIST_ORIGINS: [
     'http://localhost:3010',
