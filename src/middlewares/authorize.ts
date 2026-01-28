@@ -137,15 +137,15 @@ export const checkFolderAccess = async (
     if (!folder) {
       return res.status(404).json({ error: 'Folder not found' });
     }
-    if (
-      folder.allowedUsers &&
-      folder.allowedUsers.length > 0 &&
-      !folder.allowedUsers.some((id: any) => id.equals(userId))
-    ) {
-      return res
-        .status(403)
-        .json({ error: 'You do not have access to this folder' });
-    }
+    // if (
+    //   folder.allowedUsers &&
+    //   folder.allowedUsers.length > 0 &&
+    //   !folder.allowedUsers.some((id: any) => id.equals(userId))
+    // ) {
+    //   return res
+    //     .status(403)
+    //     .json({ error: 'You do not have access to this folder' });
+    // }
     next();
   } catch (err) {
     res.status(500).json({ error: 'Internal server error', details: err });
