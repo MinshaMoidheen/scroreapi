@@ -6,11 +6,11 @@ import { logger } from '@/lib/manualLogger';
 import { ConnectOptions } from 'mongoose';
 
 const clientOptions: ConnectOptions = {
-  dbName: 'sensei_new',
+  dbName: 'sensei',
 };
 
 const logClientOptions: ConnectOptions = {
-  dbName: 'sensei_logs_new',
+  dbName: 'sensei_logs',
 };
 
 // Main database connection
@@ -44,11 +44,17 @@ export const connectToLogDatabase = async (): Promise<void> => {
   }
   try {
     // Create a separate connection for logs using local MongoDB
-    logConnection = mongoose.createConnection(config.LOCAL_MONGO_URI, logClientOptions);
-    logger.info('MongoDB Log Database connected successfully to local instance', {
-      uri: config.LOCAL_MONGO_URI,
-      options: logClientOptions,
-    });
+    logConnection = mongoose.createConnection(
+      config.LOCAL_MONGO_URI,
+      logClientOptions,
+    );
+    logger.info(
+      'MongoDB Log Database connected successfully to local instance',
+      {
+        uri: config.LOCAL_MONGO_URI,
+        options: logClientOptions,
+      },
+    );
   } catch (err) {
     if (err instanceof Error) {
       throw err;
