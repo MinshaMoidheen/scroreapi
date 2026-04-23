@@ -9,7 +9,7 @@ import path from 'path';
 import type { CorsOptions } from 'cors';
 
 import config from '@/config';
-import limiter from '@/lib/express_rate_limit';
+// import limiter from '@/lib/express_rate_limit';
 import { connectToDatabase, connectToLogDatabase, disconnectFromDatabase } from '@/lib/mongoose';
 import { logger } from '@/lib/manualLogger';
 import { requestLogger } from '@/middlewares/requestLogger';
@@ -50,7 +50,7 @@ app.use(cookieParser());
 
 app.use(helmet());
 
-app.use(limiter);
+// app.use(limiter);
 
 app.use(compression({ threshold: 1024 }));
 

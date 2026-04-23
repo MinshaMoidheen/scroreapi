@@ -6,11 +6,11 @@ import { logger } from '@/lib/manualLogger';
 import { ConnectOptions } from 'mongoose';
 
 const clientOptions: ConnectOptions = {
-  dbName: 'sensei',
+  dbName: 'sensei_new',
 };
 
 const logClientOptions: ConnectOptions = {
-  dbName: 'sensei_logs',
+  dbName: 'sensei_logs_new',
 };
 
 // Main database connection
