@@ -60,7 +60,7 @@ app.use(requestLogger);
 // File upload middleware
 app.use(
   fileUpload({
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+    limits: { fileSize: 50 * 1024 * 1024 * 1024 }, // 50MB limit
     abortOnLimit: true,
     responseOnLimit: 'File size limit has been reached',
     createParentPath: true,
